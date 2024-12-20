@@ -1,0 +1,39 @@
+---
+services:
+  redmine:
+    image: redmine
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.redmineweb.rule=Host(`redmine.change.me`)"
+      - "traefik.http.routers.redmineweb.entrypoints=websecure"
+      - "traefik.http.routers.redmineweb.tls=true"
+      - "traefik.http.services.redmineweb.loadbalancer.server.port=3000"
+      - "traefik.http.routers.redmineweb.tls.certresolver=myresolver"
+    environment:
+      REDMINE_DB_MYSQL: db
+      REDMINE_DB_PASSWORD: example
+      REDMINE_SECRET_KEY_BASE: supersecretkey
+    networks:
+      - proxy
+      - internal
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: redmine
+    networks:
+      - internal
+    volumes:
+    - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
+
+networks:
+  proxy:
+    name: proxy
+  internal:
+    driver: bridge

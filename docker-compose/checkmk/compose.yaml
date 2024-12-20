@@ -1,0 +1,27 @@
+---
+services:
+  monitoring:
+    image: checkmk/check-mk-cloud:2.3.0-latest
+    container_name: monitoring
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitoring.rule=Host(`checkmk.change.me`)"
+      - "traefik.http.routers.monitoring.entrypoints=websecure"
+      - "traefik.http.routers.monitoring.tls=true"
+      - "traefik.http.routers.monitoring.tls.certresolver=myresolver"
+      - "traefik.http.services.monitoring.loadbalancer.server.port=5000"
+    tmpfs:
+      - /opt/omd/sites/cmk/tmp:uid=1000,gid=1000
+    volumes:
+      - monitoring:/omd/sites
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+
+volumes:
+  monitoring:
+
+networks:
+  proxy:
+    name: proxy

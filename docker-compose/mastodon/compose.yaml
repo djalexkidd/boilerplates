@@ -1,0 +1,79 @@
+---
+services:
+  mastodon:
+    image: lscr.io/linuxserver/mastodon:latest
+    container_name: mastodon
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - LOCAL_DOMAIN=mastodon.change.me
+      - WEB_DOMAIN=mastodon.change.me
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DB_HOST=db
+      - DB_USER=mastodon
+      - DB_NAME=mastodon
+      - DB_PASS=mastodon
+      - DB_PORT=5432
+      - ES_ENABLED=false
+      - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=dI67FOW0Ok2q5xwOx4SFmxCSTe4s0m8x
+      - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=7Ss0YhUFKcyjOeFhBrtMOEgedOJGW057
+      - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=BT59XPLLU2bYjWR2bEVBJtSs9fijeTym
+      - SECRET_KEY_BASE=1d107c6e999a2a584b51cb1438e9e5f24024ebb0423aa84d4b6d5566407bf3cb6c403fe3e70599e23ee19976058f3d0ade234d2c3f25fcaa2d358362c3a2070f
+      - OTP_SECRET=1d107c6e999a2a584b51cb1438e9e5f24024ebb0423aa84d4b6d5566407bf3cb6c403fe3e70599e23ee19976058f3d0ade234d2c3f25fcaa2d358362c3a2070f
+      - VAPID_PRIVATE_KEY=NUPwb0bAhnrJhT5iJQzdISvAob0fgG4wIB4I6jsRDL0=
+      - VAPID_PUBLIC_KEY=BBOBGQYC11grHpXucB7dylsA6-9gNshdslLDBoWWF7ykzU4SD0dHSGUJzC90xLJgw07H0TmKiynCa_MlP4pV_kg=
+      - SMTP_SERVER=mail.change.me
+      - SMTP_PORT=587
+      - SMTP_LOGIN=postmaster@change.me
+      - SMTP_PASSWORD=Password01
+      - SMTP_FROM_ADDRESS=postmaster@change.me
+      - S3_ENABLED=false
+
+    networks:
+      - proxy
+      - internal
+    volumes:
+      - config:/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mastodon.rule=Host(`mastodon.change.me`)"
+      - "traefik.http.routers.mastodon.entrypoints=websecure"
+      - "traefik.http.routers.mastodon.tls=true"
+      - "traefik.http.routers.mastodon.tls.certresolver=myresolver"
+      - "traefik.http.services.mastodon.loadbalancer.server.port=443"
+      - "traefik.http.services.mastodon.loadbalancer.server.scheme=https"
+      - "traefik.http.services.mastodon.loadbalancer.serverstransport=ignorecert@file"
+      - "traefik.docker.network=proxy"
+    restart: unless-stopped
+
+  db:
+    image: postgres:17
+    container_name: mastodon_db
+    environment:
+      - POSTGRES_USER=mastodon
+      - POSTGRES_PASSWORD=mastodon
+      - POSTGRES_DB=mastodon
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: mastodon_redis
+    networks:
+      - internal
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  config:
+
+networks:
+  proxy:
+    name: proxy
+  internal:
+    driver: bridge

@@ -1,0 +1,22 @@
+---
+services:
+  privatebin:
+    image: privatebin/nginx-fpm-alpine:latest
+    read_only: true
+    networks:
+      - proxy
+    volumes:
+      - '/srv/data:/srv/data'
+      - '/srv/data/conf.php:/srv/cfg/conf.php:ro'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.privatebin.rule=Host(`paste.change.me`)"
+      - "traefik.http.routers.privatebin.entrypoints=websecure"
+      - "traefik.http.routers.privatebin.tls=true"
+      - "traefik.http.services.privatebin.loadbalancer.server.port=8080"
+      - "traefik.http.routers.privatebin.tls.certresolver=myresolver"
+    restart: always
+
+networks:
+  proxy:
+    name: proxy

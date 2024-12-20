@@ -1,0 +1,51 @@
+---
+services:
+  db:
+    image: mariadb:latest
+    command: '--default-authentication-plugin=mysql_native_password'
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - internal
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=semaphore
+      - MYSQL_DATABASE=semaphore
+      - MYSQL_USER=semaphore
+      - MYSQL_PASSWORD=semaphore
+      
+  semaphore:
+    restart: always
+    labels:
+       - "traefik.enable=true"
+       - "traefik.http.routers.semaphore.rule=Host(`semaphore.balkanylinux.org`)"
+       - "traefik.http.routers.semaphore.entrypoints=websecure"
+       - "traefik.http.routers.semaphore.tls=true"
+       - "traefik.http.routers.semaphore.tls.certresolver=myresolver"
+       - "traefik.http.services.semaphore.loadbalancer.server.port=3000"
+       - "traefik.docker.network=proxy"
+    image: semaphoreui/semaphore:latest
+    networks:
+      - proxy
+      - internal
+    environment:
+      SEMAPHORE_ADMIN_PASSWORD: Password01
+      SEMAPHORE_ADMIN_NAME: admin
+      SEMAPHORE_ADMIN_EMAIL: djalexkidd@balkanylinux.org
+      SEMAPHORE_ADMIN: admin
+      SEMAPHORE_DB_USER: semaphore
+      SEMAPHORE_DB_PASS: semaphore
+      SEMAPHORE_DB_HOST: db # for postgres, change to: postgres
+      SEMAPHORE_DB_PORT: 3306 # change to 5432 for postgres
+      SEMAPHORE_DB_DIALECT: mysql
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+
+networks:
+  proxy:
+    name: proxy
+  internal:
+    driver: bridge

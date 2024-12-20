@@ -1,0 +1,30 @@
+---
+services:
+    lufi:
+        image: xataz/lufi
+        environment:
+            - SECRET=5ec4e381e20ac79220fdba5ab71e4a83
+            - CONTACT=example@change.me
+            - MAX_DELAY=60
+        restart: always
+        volumes:
+            - db:/usr/lufi/data
+            - files:/usr/lufi/files
+        networks:
+          - proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.lufi.rule=Host(`lufi.change.me`)"
+          - "traefik.http.routers.lufi.entrypoints=websecure"
+          - "traefik.http.routers.lufi.tls=true"
+          - "traefik.http.services.lufi.loadbalancer.server.port=8081"
+          - "traefik.docker.network=proxy"
+          - "traefik.http.routers.lufi.tls.certresolver=myresolver"
+        
+volumes:
+    db:
+    files:
+
+networks:
+  proxy:
+    name: proxy

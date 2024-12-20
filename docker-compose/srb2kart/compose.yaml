@@ -1,0 +1,33 @@
+---
+services:
+  srb2kart:
+    image: ellite/srb2kart-server:latest
+    container_name: srb2kart
+    restart: always
+    ports:
+      - "5029:5029/udp"
+    volumes:
+      - /srv/srb2kart/addons:/addons:ro
+      - /srv/srb2kart/kartserv.cfg:/config/kartserv.cfg:ro
+    stdin_open: true
+    tty: true
+
+  srb2repo:
+    image: nginx:latest
+    container_name: srb2kart-web
+    restart: always
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.srb2repo.rule=Host(`repo.change.me`)"
+      - "traefik.http.routers.srb2repo.entrypoints=websecure"
+      - "traefik.http.routers.srb2repo.tls=true"
+      - "traefik.http.services.srb2repo.loadbalancer.server.port=80"
+      - "traefik.http.routers.srb2repo.tls.certresolver=myresolver"
+    volumes:
+      - /srv/srb2kart/addons:/usr/share/nginx/html:ro
+
+networks:
+  proxy:
+    name: proxy

@@ -1,0 +1,40 @@
+---
+services:
+  code-server:
+    image: linuxserver/code-server:latest
+    container_name: code-server
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - PASSWORD=password #optional
+      - HASHED_PASSWORD= #optional
+      - SUDO_PASSWORD=password #optional
+      - SUDO_PASSWORD_HASH= #optional
+      - PROXY_DOMAIN=code.change.me #optional
+      - DEFAULT_WORKSPACE=/config/workspace #optional
+    volumes:
+      - ./config:/config
+    networks:
+          - proxy
+    labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.code-server.rule=Host(`code.change.me`)"
+          - "traefik.http.routers.code-server.entrypoints=websecure"
+          - "traefik.http.routers.code-server.tls=true"
+          - "traefik.http.routers.code-server.tls.certresolver=myresolver"
+          - "traefik.http.routers.code-server.service=code-server"
+          - "traefik.http.services.code-server.loadbalancer.server.port=8443"
+
+          # Live server
+          - "traefik.http.routers.code-server-5500.rule=Host(`5500.code.change.me`)"
+          - "traefik.http.routers.code-server-5500.entrypoints=websecure"
+          - "traefik.http.routers.code-server-5500.tls=true"
+          - "traefik.http.routers.code-server-5500.tls.certresolver=myresolver"
+          - "traefik.http.routers.code-server-5500.service=code-server-5500"
+          - "traefik.http.services.code-server-5500.loadbalancer.server.port=5500"
+    restart: always
+
+networks:
+  proxy:
+    name: proxy

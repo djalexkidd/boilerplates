@@ -1,0 +1,66 @@
+---
+services:
+  gitlab:
+    image: gitlab/gitlab-ee:latest
+    container_name: gitlab
+    restart: always
+    hostname: 'gitlab.balkanylinux.org'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.balkanylinux.org'
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        nginx['redirect_http_to_https'] = false
+        registry_external_url 'http://gitlab.balkanylinux.org'
+        gitlab_rails['registry_enabled'] = true
+        gitlab_rails['registry_host'] = "gitlab.balkanylinux.org"
+        registry_nginx['listen_port'] = 5001
+        registry_nginx['enable'] = true
+        registry_nginx['listen_https'] = true
+        registry_nginx['redirect_http_to_https'] = false
+    networks:
+      - proxy
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gitlab.rule=Host(`gitlab.balkanylinux.org`)"
+      - "traefik.http.routers.gitlab.entrypoints=websecure"
+      - "traefik.http.routers.gitlab.tls=true"
+      - "traefik.http.routers.gitlab.tls.certresolver=myresolver"
+      - "traefik.http.routers.gitlab.service=gitlab"
+      - "traefik.http.services.gitlab.loadbalancer.server.port=80"
+      - "traefik.http.routers.gitlab-registry.rule=Host(`registry.balkanylinux.org`)"
+      - "traefik.http.routers.gitlab-registry.entrypoints=websecure"
+      - "traefik.http.routers.gitlab-registry.tls=true"
+      - "traefik.http.routers.gitlab-registry.tls.certresolver=myresolver"
+      - "traefik.http.routers.gitlab-registry.service=gitlab-registry"
+      - "traefik.http.services.gitlab-registry.loadbalancer.server.port=5001"
+      - "traefik.docker.network=proxy"
+    volumes:
+      - '/srv/gitlab/config:/etc/gitlab'
+      - '/srv/gitlab/logs:/var/log/gitlab'
+      - '/srv/gitlab/data:/var/opt/gitlab'
+    shm_size: '256m'
+
+  gitlab-runner:
+    restart: always
+    image: gitlab/gitlab-runner
+    container_name: gitlab-runner
+    networks:
+      - internal
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - 'runner:/etc/gitlab-runner'
+      - 'config:/etc/gitlab'
+
+volumes:
+  config:
+    driver: local
+  runner:
+    driver: local
+
+networks:
+  proxy:
+    name: proxy
+  internal:
+    driver: bridge

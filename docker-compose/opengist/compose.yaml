@@ -1,0 +1,21 @@
+---
+services:
+  opengist:
+    image: ghcr.io/thomiceli/opengist:1.8
+    container_name: opengist
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opengist.rule=Host(`gist.change.me`)"
+      - "traefik.http.routers.opengist.entrypoints=websecure"
+      - "traefik.http.routers.opengist.tls=true"
+      - "traefik.http.routers.opengist.tls.certresolver=myresolver"
+      - "traefik.http.services.opengist.loadbalancer.server.port=6157"
+    volumes:
+      - "$HOME/.opengist:/opengist"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    name: proxy

@@ -1,0 +1,29 @@
+---
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    volumes:
+     - ./bitwarden:/data:rw
+    networks:
+      - proxy
+    labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.vaultwarden.rule=Host(`vault.change.me`)"
+        - "traefik.http.routers.vaultwarden.entrypoints=websecure"
+        - "traefik.http.routers.vaultwarden.tls=true"
+        - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"
+        - "traefik.http.routers.vaultwarden.tls.certresolver=myresolver"
+    environment:
+     - "WEBSOCKET_ENABLED=true"
+     - "SMTP_HOST=mail.change.me"
+     - "SMTP_FROM=no-reply@change.me"
+     - "SMTP_PORT=587"
+     - "SMTP_USERNAME=no-reply@change.me"
+     - "SMTP_PASSWORD=change_me"
+     - "DOMAIN=https://vault.change.me"
+
+networks:
+  proxy:
+    name: proxy

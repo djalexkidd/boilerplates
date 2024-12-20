@@ -1,0 +1,43 @@
+---
+services:
+    db:
+        image: postgres:16
+        volumes:
+            - db_data:/var/lib/postgresql/data
+        restart: unless-stopped
+        networks:
+          - proxy
+        environment:
+            - POSTGRES_PASSWORD=petitconnils
+            - POSTGRES_USER=petitconnils
+            - POSTGRES_DB=joplin
+    app:
+        image: joplin/server:latest
+        depends_on:
+            - db
+        labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.app.rule=Host(`joplin.change.me`)"
+          - "traefik.http.routers.app.entrypoints=websecure"
+          - "traefik.http.routers.app.tls=true"
+          - "traefik.http.routers.app.tls.certresolver=myresolver"
+          - "traefik.http.services.app.loadbalancer.server.port=22300"
+        restart: unless-stopped
+        networks:
+          - proxy
+        environment:
+            - APP_PORT=22300
+            - APP_BASE_URL=https://joplin.balkanylinux.org
+            - DB_CLIENT=pg
+            - POSTGRES_PASSWORD=petitconnils
+            - POSTGRES_DATABASE=joplin
+            - POSTGRES_USER=petitconnils
+            - POSTGRES_PORT=5432
+            - POSTGRES_HOST=db
+
+volumes:
+  db_data:
+
+networks:
+  proxy:
+    name: proxy
