@@ -1,0 +1,28 @@
+---
+services:
+  kasm:
+    image: lscr.io/linuxserver/kasm:latest
+    container_name: kasm
+    privileged: true
+    environment:
+      - KASM_PORT=443
+    volumes:
+      - /srv/kasm:/opt
+    networks:
+      - proxy
+    ports:
+      - 3000:3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kasm.rule=Host(`kasm.change.me`)"
+      - "traefik.http.routers.kasm.entrypoints=websecure"
+      - "traefik.http.routers.kasm.tls=true"
+      - "traefik.http.routers.kasm.tls.certresolver=myresolver"
+      - "traefik.http.services.kasm.loadbalancer.server.port=443"
+      - "traefik.http.services.kasm.loadbalancer.server.scheme=https"
+      - "traefik.http.services.kasm.loadbalancer.serverstransport=ignorecert@file"
+    restart: unless-stopped
+
+networks:
+  proxy:
+    name: proxy

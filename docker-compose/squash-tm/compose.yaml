@@ -1,0 +1,50 @@
+services:
+  squash-tm-md:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: Password01
+      MARIADB_USER: squashtm
+      MARIADB_PASSWORD: Password01
+      MARIADB_DATABASE: squash-tm
+    networks:
+
+      - internal
+    volumes:
+      - "squash-tm-db:/var/lib/mysql"
+
+  squash-tm:
+    image: squashtest/squash
+    depends_on:
+      - squash-tm-md
+    environment:
+      SQTM_DB_TYPE: mariadb
+      SQTM_DB_USERNAME: squashtm
+      SQTM_DB_PASSWORD: Password01
+      SQTM_DB_NAME: squash-tm
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.squash-tm.rule=Host(`squash-tm.change.me`)"
+      - "traefik.http.routers.squash-tm.entrypoints=websecure"
+      - "traefik.http.routers.squash-tm.tls=true"
+      - "traefik.http.routers.squash-tm.tls.certresolver=myresolver"
+      - "traefik.http.services.squash-tm.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+      - internal
+    links:
+      - squash-tm-md:mariadb
+    volumes:
+      - squash-tm-logs:/opt/squash-tm/logs
+      - squash-tm-plugins:/opt/squash-tm/plugins
+
+volumes:
+  squash-tm-logs:
+  squash-tm-plugins:
+  squash-tm-db:
+
+networks:
+  proxy:
+    name: proxy
+  internal:
+    driver: bridge
