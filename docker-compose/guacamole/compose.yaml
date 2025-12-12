@@ -1,0 +1,74 @@
+---
+# After deploy, run these commands :
+# docker run --rm guacamole/guacamole /opt/guacamole/bin/initdb.sh --mysql > initdb.sql
+# docker exec -i guacamole_db mysql --user yourusername --password=yourpassword guacamole_db < initdb.sql
+services:
+  guacd:
+    container_name: guacd_compose
+    image: guacamole/guacd
+    networks:
+      - proxy
+      - internal
+    restart: always
+    volumes:
+    - guacamole_drive:/drive:rw
+    - guacamole_record:/record:rw
+    
+  guacamole_db:
+        container_name: guacamole_db
+        hostname: guacamole_db
+        image: mariadb:10.11
+        restart: always
+        networks:
+          - internal
+        volumes:
+            - guacamole_db:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=blablalinux
+            - MYSQL_DATABASE=guacamole_db
+            - MYSQL_USER=anyblabla
+            - MYSQL_PASSWORD=blabla
+
+  guacamole:
+    container_name: guacamole_compose
+    group_add:
+      - "1000"
+    depends_on:
+      - guacd
+      - guacamole_db
+    environment:
+      GUACD_HOSTNAME: guacd
+      MYSQL_HOSTNAME: guacamole_db
+      MYSQL_DATABASE: guacamole_db
+      MYSQL_USER: anyblabla
+      MYSQL_PASSWORD: blabla
+      REMOTE_IP_VALVE_ENABLED: true
+      RECORDING_SEARCH_PATH: /record
+      WEBAPP_CONTEXT: 'ROOT'
+    image: guacamole/guacamole
+    networks:
+      - proxy
+      - internal
+    volumes:
+      - guacamole_record:/record:rw
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.guacamole.rule=Host(`guacamole.change.me`)"
+      - "traefik.http.routers.guacamole.entrypoints=websecure"
+      - "traefik.http.routers.guacamole.tls=true"
+      - "traefik.http.routers.guacamole.tls.certresolver=myresolver"
+      - "traefik.http.services.guacamole.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
+    restart: always
+
+volumes:
+  guacamole_record:
+  guacamole_drive:
+  guacamole_db:
+  guacamole_data:
+
+networks:
+  proxy:
+    name: proxy
+  internal:
+    driver: bridge

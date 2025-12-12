@@ -1,0 +1,51 @@
+services:
+  redis:
+    image: redis:bookworm
+    container_name: redis
+    restart: always
+    networks:
+      - internal
+
+  onetimesecret:
+    image: onetimesecret/onetimesecret:next
+    container_name: onetimesecret
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.onetimesecret.rule=Host(`ots.change.me`)"
+      - "traefik.http.routers.onetimesecret.entrypoints=websecure"
+      - "traefik.http.routers.onetimesecret.tls=true"
+      - "traefik.http.routers.onetimesecret.tls.certresolver=myresolver"
+      - "traefik.http.services.onetimesecret.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+    environment:
+      HOST: "ots.change.me"
+      SSL: "true"
+      SECRET: "changeme"
+      COLONEL: "your_mail@change.me"
+      REDIS_URL: "redis://redis:6379/0"
+      RACK_ENV: "production"
+      ONETIME_DEBUG: true
+      EMAILER_MODE: "smtp"
+      FROM: "your_mail@change.me"
+      FROMNAME: "Onetime Secret"
+      SMTP_HOST: "mail.change.me"
+      SMTP_PORT: 2525
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+      SMTP_AUTH: ""
+      SMTP_TLS: false
+    volumes:
+      - /etc/ssl/certs:/etc/ssl/certs:ro
+      #- /etc/onetimesecret/config.yaml:/app/etc/config.yaml:ro
+    depends_on:
+      - redis
+    networks:
+      - proxy
+      - internal
+
+networks:
+  proxy:
+    name: proxy
+  internal:
+    driver: bridge

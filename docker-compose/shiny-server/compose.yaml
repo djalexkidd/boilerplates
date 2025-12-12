@@ -1,0 +1,20 @@
+---
+services:
+  shiny-server:
+    image: shiny-server:latest
+    container_name: shiny-server
+    restart: always
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.shiny-server.rule=Host(`shiny.change.me`)"
+      - "traefik.http.routers.shiny-server.entrypoints=websecure"
+      - "traefik.http.routers.shiny-server.tls=true"
+      - "traefik.http.routers.shiny-server.tls.certresolver=myresolver"
+      - "traefik.http.services.shiny-server.loadbalancer.server.port=3838"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    name: proxy
