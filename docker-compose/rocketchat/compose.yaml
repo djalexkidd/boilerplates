@@ -30,7 +30,7 @@ services:
       - "traefik.docker.network=proxy"
       
   mongodb:
-    image: docker.io/bitnami/mongodb:7.0
+    image: docker.io/soldevelo/mongodb:7.0
     restart: always
     networks:
       - internal
